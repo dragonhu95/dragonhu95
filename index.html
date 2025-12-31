@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>手機友善盧恩占卜</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: 'Arial', sans-serif; background: #1e1e2f; color: #f0f0f0; margin:0; padding:20px; }
+h1, h2 { color: #ffd700; text-align:center; }
+button, select { font-size:18px; padding:12px 20px; margin:10px; border:none; border-radius:8px; cursor:pointer; }
+button { background: linear-gradient(90deg,#ff7f50,#ff6347); color:#fff; }
+button:hover { opacity:0.9; }
+select { border-radius:8px; }
+#result { margin-top:20px; text-align:center; }
+.rune { font-size:48px; margin:10px; display:inline-block; background: linear-gradient(135deg,#ff7f50,#ff6347); padding:20px; border-radius:16px; }
+.meaning { font-size:16px; margin-bottom:10px; }
+.intuition { font-size:16px; font-style: italic; margin-top:15px; color:#ffe4b5; }
+#diary { margin-top:30px; background:#2e2e40; padding:15px; border-radius:12px; max-height:300px; overflow-y:auto; }
+.time-label { font-weight:bold; margin-top:10px; color:#ffd700; }
+#chartContainer { max-width:700px; margin:30px auto; background:#2e2e40; padding:10px; border-radius:12px; }
+</style>
+</head>
+<body>
+
+<h1>手機友善盧恩占卜</h1>
+
+<p style="text-align:center;">選擇抽符文數量（單顆 / 三顆 / 五顆）</p>
+<div style="text-align:center;">
+<select id="runeCount">
+  <option value="1">單顆</option>
+  <option value="3" selected>三顆</option>
+  <option value="5">五顆</option>
+</select>
+<button onclick="drawRunes()">抽符文</button>
+<button onclick="exportDiary()">匯出日誌 TXT</button>
+</div>
+
+<div id="result"></div>
+<div class="intuition" id="intuition"></div>
+
+<h2>占卜日誌</h2>
+<div id="diary">每天的占卜結果會記錄在這裡。</div>
+
+<h2>符文出現統計圖</h2>
+<div id="chartContainer">
+<canvas id="runeChart"></canvas>
+</div>
+
+<script>
+const runes = [
+  {symbol: "ᚠ", meaning: "財富、物質收穫與行動力"},
+  {symbol: "ᚢ", meaning: "力量、健康與勇氣"},
+  {symbol: "ᚦ", meaning: "挑戰、阻礙，也提醒小心"},
+  {symbol: "ᚨ", meaning: "溝通、智慧、啟示"},
+  {symbol: "ᚱ", meaning: "旅程、行動、方向感"},
+  {symbol: "ᚲ", meaning: "創意、知識、學習"},
+  {symbol: "ᚷ", meaning: "互惠、合作、關係平衡"},
+  {symbol: "ᚹ", meaning: "喜悅、幸福、順利"},
+  {symbol: "ᚺ", meaning: "改變、破壞、突發事件"},
+  {symbol: "ᚾ", meaning: "考驗、限制、需耐心"},
+  {symbol: "ᛁ", meaning: "停滯、沉澱、等待"},
+  {symbol: "ᛃ", meaning: "收成、成果、循環自然"},
+  {symbol: "ᛇ", meaning: "保護、堅韌、轉化"},
+  {symbol: "ᛈ", meaning: "神秘、命運、未知"},
+  {symbol: "ᛉ", meaning: "防護、直覺、守護"},
+  {symbol: "ᛋ", meaning: "光明、成功、正能量"},
+  {symbol: "ᛏ", meaning: "正義、決心、勝利"},
+  {symbol: "ᛒ", meaning: "新生、成長、家庭"},
+  {symbol: "ᛖ", meaning: "進展、合作、信任"},
+  {symbol: "ᛗ", meaning: "人際、自己認知、社群"},
+  {symbol: "ᛚ", meaning: "流動、直覺、感情"},
+  {symbol: "ᛜ", meaning: "潛能、休息後的成果"},
+  {symbol: "ᛞ", meaning: "轉機、覺醒、新開始"},
+  {symbol: "ᛟ", meaning: "遺產、根基、穩定"}
+];
+
+let runeStats = {};
+runes.forEach(r=>runeStats[r.symbol]=0);
+
+function drawRunes() {
+  const count = parseInt(document.getElementById("runeCount").value);
+  let selected = [];
+  while(selected.length < count){
+    let rune = runes[Math.floor(Math.random()*runes.length)];
+    if(!selected.includes(rune)) selected.push(rune);
+  }
+
+  const resultDiv = document.getElementById("result");
+  resultDiv.innerHTML = "";
+  let diaryEntry = `【${new Date().toLocaleDateString()}】 抽出 ${count} 顆符文：<br>`;
+  const timeLabels = ["過去", "現在", "未來"];
+
+  selected.forEach((r,i)=>{
+    resultDiv.innerHTML += `<div class="time-label">${count===3 && i<3 ? timeLabels[i] : ""}</div>` +
+                           `<div class="rune">${r.symbol}</div><div class="meaning">${r.meaning}</div>`;
+    diaryEntry += `${count===3 && i<3 ? timeLabels[i] : ""}${r.symbol}：${r.meaning}<br>`;
+    runeStats[r.symbol]++;
+  });
+
+  let intuition = "建議：";
+  const meanings = selected.map(r=>r.meaning);
+  if(meanings.some(m=>m.includes("挑戰") || m.includes("考驗"))) {
+    intuition += "目前會有一些阻礙或考驗，要保持耐心與冷靜。";
+  } else if(meanings.some(m=>m.includes("喜悅") || m.includes("成功"))) {
+    intuition += "一切順利，適合積極行動，抓住好運。";
+  } else if(meanings.some(m=>m.includes("流動") || m.includes("轉機"))) {
+    intuition += "事情在變化中，建議順應直覺與情況調整策略。";
+  } else {
+    intuition += "保持平衡，觀察周遭訊息，再做決定。";
+  }
+  document.getElementById("intuition").innerHTML = intuition;
+
+  let storedDiary = localStorage.getItem("runeDiary") || "";
+  storedDiary = diaryEntry + "<hr>" + storedDiary;
+  document.getElementById("diary").innerHTML = storedDiary;
+  localStorage.setItem("runeDiary", storedDiary);
+
+  updateChart();
+}
+
+const ctx = document.getElementById('runeChart').getContext('2d');
+const chartLabels = runes.map(r=>r.symbol);
+let runeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: chartLabels,
+        datasets: [{
+            label: '符文出現次數',
+            data: chartLabels.map(l=>runeStats[l]),
+            backgroundColor: 'rgba(255, 215, 0, 0.7)',
+            borderColor: 'rgba(255, 215, 0, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: { y: { beginAtZero: true, precision:0 } }
+    }
+});
+
+function updateChart() {
+    runeChart.data.datasets[0].data = chartLabels.map(l=>runeStats[l]);
+    runeChart.update();
+}
+
+function exportDiary() {
+    let diaryContent = localStorage.getItem("runeDiary") || "尚無日誌";
+    let blob = new Blob([diaryContent], {type: "text/plain;charset=utf-8"});
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `RuneDiary_${new Date().toLocaleDateString()}.txt`;
+    link.click();
+}
+
+window.onload = () => {
+  document.getElementById("diary").innerHTML = localStorage.getItem("runeDiary") || "每天的占卜結果會記錄在這裡。";
+};
+</script>
+
+</body>
+</html>
